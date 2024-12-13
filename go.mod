@@ -1,6 +1,6 @@
-module github.com/censys/scan-takehome
+module github.com/fsufitch/censys-takehome
 
-go 1.20
+go 1.22
 
 require cloud.google.com/go/pubsub v1.33.0
 
