@@ -7,6 +7,8 @@ require (
 	github.com/urfave/cli/v2 v2.27.5
 )
 
+require github.com/lib/pq v1.10.9 // indirect
+
 require (
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.11.0 // indirect

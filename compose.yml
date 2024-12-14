@@ -28,16 +28,6 @@ services:
       mk-topic:
         condition: service_completed_successfully
     command: PUT http://pubsub:8085/v1/projects/test-project/subscriptions/scan-sub topic=projects/test-project/topics/scan-topic --ignore-stdin 
-
-  # The database for storing results
-  scandb:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_USER: scan-ingest
-      POSTGRES_PASSWORD: scanner-pw-development-only
-      POSEGRES_DB: scandb
-    volumes:
-      - scandb:/var/lib/postgresql/data:rw
   
   # Runs the "scanner"
   scanner:
@@ -50,6 +40,31 @@ services:
     build:
       context: .
       dockerfile: Containerfile
+      target: scanner
+
+  # The database for storing processor results
+  scandb:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: scan-ingest
+      POSTGRES_PASSWORD: scanner-pw-development-only
+      POSTGRES_DB: scandb
+    volumes:
+      - scandb:/var/lib/postgresql/data:rw
+
+  # The processor (the actual takehome exercise)
+  processor:
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: processor
+    environment:
+      POSTGRES_HOST: scandb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: scandb
+      POSTGRES_USER: scan-ingest
+      POSTGRES_PASSWORD: scanner-pw-development-only
+
 
 volumes:
   scandb:

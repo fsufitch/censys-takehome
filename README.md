@@ -21,3 +21,7 @@ Go provides support going back two minor versions. Keeping up to date on the ver
 ### Introduced configuration via environment variables
 
 This is according to good practice 12-factor app design.
+
+### [Google Wire](https://github.com/google/wire) dependency injection
+
+TK

@@ -6,7 +6,7 @@ import (
 	"os/signal"
 
 	"github.com/fsufitch/censys-takehome/config"
-	"github.com/fsufitch/censys-takehome/db"
+	"github.com/fsufitch/censys-takehome/database"
 	"github.com/fsufitch/censys-takehome/logging"
 	"github.com/fsufitch/censys-takehome/server"
 	"github.com/google/wire"
@@ -54,7 +54,7 @@ func NewCLI() *cli.App {
 			},
 			&cli.StringFlag{
 				Name:    "pgdb",
-				EnvVars: []string{"POSTGRES_DATABASE"},
+				EnvVars: []string{"POSTGRES_DB"},
 				Usage:   "database name to use",
 			},
 
@@ -82,7 +82,8 @@ func NewCLI() *cli.App {
 }
 
 func ServerMain(cctx *cli.Context) error {
-	app, err := initializeApp(
+	app, cleanup, err := initializeApp(
+		cctx.Context,
 		config.PostgresConfiguration{
 			Host:     cctx.String("pghost"),
 			Port:     cctx.Int("pgport"),
@@ -98,11 +99,13 @@ func ServerMain(cctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return app.Run(cctx.Context)
+	err = app.Run()
+	cleanup()
+	return err
 }
 
 var AppProviders = wire.NewSet(
 	server.ProvideServer,
-	db.ProvideDatabase,
+	database.ProvideDatabase,
 	logging.ProvideLogFunc,
 )

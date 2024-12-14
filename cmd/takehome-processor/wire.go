@@ -6,11 +6,13 @@
 package main
 
 import (
+	"context"
+
 	"github.com/fsufitch/censys-takehome/config"
 	"github.com/fsufitch/censys-takehome/server"
 	"github.com/google/wire"
 )
 
-func initializeApp(config.PostgresConfiguration, config.LoggingConfiguration) (server.Server, error) {
+func initializeApp(context.Context, config.PostgresConfiguration, config.LoggingConfiguration) (server.Server, func(), error) {
 	panic(wire.Build(AppProviders))
 }
