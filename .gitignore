@@ -1,0 +1,3 @@
+bin/
+.env
+*_gen.go

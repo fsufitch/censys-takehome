@@ -1,8 +1,6 @@
-`censys-takehome`
-=================
+# `censys-takehome`
 
-Implementation Notes
---------------------
+## Implementation Notes
 
 I restructured the forked project a little bit, to illustrate my understanding of best practices.
 
@@ -19,3 +17,7 @@ To me, the `Containerfile` is like a `Makefile`; it belongs where it can "refer"
 ### Upgraded to Go 1.22
 
 Go provides support going back two minor versions. Keeping up to date on the version being used is a good idea.
+
+### Introduced configuration via environment variables
+
+This is according to good practice 12-factor app design.
