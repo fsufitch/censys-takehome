@@ -6,10 +6,6 @@ import (
 	"os/signal"
 
 	"github.com/fsufitch/censys-takehome/config"
-	"github.com/fsufitch/censys-takehome/database"
-	"github.com/fsufitch/censys-takehome/logging"
-	"github.com/fsufitch/censys-takehome/server"
-	"github.com/google/wire"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -58,6 +54,21 @@ func NewCLI() *cli.App {
 				Usage:   "database name to use",
 			},
 
+			&cli.StringFlag{
+				Name:    "pubsub-project",
+				Aliases: []string{"P"},
+				EnvVars: []string{"PUBSUB_PROJECT_ID"},
+				Value:   "test-project",
+				Usage:   "what Pubsub project to receive data from",
+			},
+			&cli.StringFlag{
+				Name:    "pubsub-topic",
+				Aliases: []string{"T"},
+				EnvVars: []string{"PUBSUB_TOPIC_ID"},
+				Value:   "scan-topic",
+				Usage:   "what Pubsub topic to receive data from",
+			},
+
 			&cli.BoolFlag{
 				Name:    "debug",
 				Aliases: []string{"D"},
@@ -82,7 +93,7 @@ func NewCLI() *cli.App {
 }
 
 func ServerMain(cctx *cli.Context) error {
-	server, cleanup, err := initializeServer(
+	server, cleanup, err := initializeProcessor(
 		cctx.Context,
 		config.PostgresConfiguration{
 			Host:     cctx.String("pghost"),
@@ -95,6 +106,10 @@ func ServerMain(cctx *cli.Context) error {
 			Debug:  cctx.Bool("debug"),
 			Pretty: cctx.Bool("pretty"),
 		},
+		config.PubsubConfiguration{
+			ProjectID: cctx.String("pubsub-project"),
+			TopicID:   cctx.String("pubsub-topic"),
+		},
 	)
 	if err != nil {
 		return err
@@ -103,12 +118,6 @@ func ServerMain(cctx *cli.Context) error {
 	cleanup()
 	return err
 }
-
-var ServerProvider = wire.NewSet(
-	server.ProvideServer,
-	logging.ProvideLogFunc,
-	database.ProvideScanEntryDAO,
-)
 
 func SchemaInitMain(cctx *cli.Context) error {
 	dao, cleanup, err := initializeSchemaDAO(
@@ -133,8 +142,3 @@ func SchemaInitMain(cctx *cli.Context) error {
 	return err
 
 }
-
-var SchemaInitProvider = wire.NewSet(
-	database.ProvideSchemaDAO,
-	logging.ProvideLogFunc,
-)

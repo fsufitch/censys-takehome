@@ -10,14 +10,22 @@ import (
 
 	"github.com/fsufitch/censys-takehome/config"
 	"github.com/fsufitch/censys-takehome/database"
-	"github.com/fsufitch/censys-takehome/server"
+	"github.com/fsufitch/censys-takehome/logging"
+	"github.com/fsufitch/censys-takehome/processor"
 	"github.com/google/wire"
 )
 
-func initializeServer(context.Context, config.PostgresConfiguration, config.LoggingConfiguration) (server.Server, func(), error) {
-	panic(wire.Build(ServerProvider))
+func initializeProcessor(context.Context, config.PostgresConfiguration, config.LoggingConfiguration, config.PubsubConfiguration) (processor.Processor, func(), error) {
+	panic(wire.Build(
+		processor.ProvideProcessor,
+		logging.ProvideLogFunc,
+		database.ProvideScanEntryDAO,
+	))
 }
 
 func initializeSchemaDAO(context.Context, config.PostgresConfiguration, config.LoggingConfiguration) (database.SchemaDAO, func(), error) {
-	panic(wire.Build(SchemaInitProvider))
+	panic(wire.Build(
+		database.ProvideSchemaDAO,
+		logging.ProvideLogFunc,
+	))
 }

@@ -20,7 +20,7 @@ type ScanEntryDAO struct {
 
 type ScanEntry struct {
 	IP      net.IP
-	Port    int
+	Port    uint32
 	Service string
 	Updated time.Time
 	Data    []byte

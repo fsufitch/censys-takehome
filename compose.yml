@@ -85,6 +85,9 @@ services:
       schema-init:
         condition: service_completed_successfully
     environment:
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      PUBSUB_PROJECT_ID: test-project
+      PUBSUB_TOPIC_ID: scan-topic
       POSTGRES_HOST: scandb
       POSTGRES_PORT: 5432
       POSTGRES_DB: scandb

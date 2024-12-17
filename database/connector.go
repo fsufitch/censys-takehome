@@ -202,7 +202,7 @@ worker:
 
 // connectionRepeaterWorker reads newConnections and delivers their results repeatedly to currentConnections
 func (dbc *DatabaseConnector) connectionRepeaterWorker() {
-	workerLog := dbc.Log().With().Str("worker", "newConnection").Logger()
+	workerLog := dbc.Log().With().Str("worker", "connectionRepeater").Logger()
 	workerLog.Debug().Msg("worker starting")
 
 	var conn *sql.DB

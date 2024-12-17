@@ -12,3 +12,8 @@ type PostgresConfiguration struct {
 	Password string
 	Database string
 }
+
+type PubsubConfiguration struct {
+	ProjectID string
+	TopicID   string
+}

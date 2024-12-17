@@ -15,7 +15,7 @@ COPY config config
 COPY database database
 COPY logging logging
 COPY scanning scanning
-COPY server server
+COPY processor processor
 COPY build.sh ./
 RUN ./build.sh
 
