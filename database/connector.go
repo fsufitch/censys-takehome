@@ -3,15 +3,20 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
 
 	"github.com/fsufitch/censys-takehome/config"
 	"github.com/fsufitch/censys-takehome/logging"
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 
 	_ "github.com/lib/pq"
 )
+
+var ErrConnection = errors.New("database connection error")
 
 type DatabaseConnector struct {
 	Context context.Context
@@ -25,7 +30,7 @@ type DatabaseConnector struct {
 	currentConections chan *sql.DB  // Used for serving connections to users of the connector
 }
 
-func ProvideDatabaseConnector(ctx context.Context, config config.PostgresConfiguration, logFunc logging.LogFunc) (*DatabaseConnector, func(), error) {
+func ProvideConnector(ctx context.Context, config config.PostgresConfiguration, logFunc logging.LogFunc) (*DatabaseConnector, func(), error) {
 	dbc := &DatabaseConnector{
 		Context: ctx,
 		Config:  config,
@@ -233,4 +238,27 @@ worker:
 		}
 	}
 	workerLog.Warn().Msg("worker terminating")
+}
+
+func (dbc *DatabaseConnector) RunTransaction(opts *sql.TxOptions, cb func(zerolog.Logger, *sql.Tx) error) error {
+	txID, err := uuid.NewRandom()
+	if err != nil {
+		dbc.Log().Err(err).Msg("failed to create UUID")
+		return err
+	}
+
+	db, err := dbc.DB()
+	if err != nil {
+		return err
+	}
+
+	txLog := dbc.Log().With().Str("tx", txID.String()).Logger()
+	txLog.Debug().Msg("begin")
+	tx, err := db.BeginTx(dbc.Context, opts)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	return cb(txLog, tx)
 }

@@ -9,10 +9,15 @@ import (
 	"context"
 
 	"github.com/fsufitch/censys-takehome/config"
+	"github.com/fsufitch/censys-takehome/database"
 	"github.com/fsufitch/censys-takehome/server"
 	"github.com/google/wire"
 )
 
-func initializeApp(context.Context, config.PostgresConfiguration, config.LoggingConfiguration) (server.Server, func(), error) {
-	panic(wire.Build(AppProviders))
+func initializeServer(context.Context, config.PostgresConfiguration, config.LoggingConfiguration) (server.Server, func(), error) {
+	panic(wire.Build(ServerProvider))
+}
+
+func initializeSchemaDAO(context.Context, config.PostgresConfiguration, config.LoggingConfiguration) (database.SchemaDAO, func(), error) {
+	panic(wire.Build(SchemaInitProvider))
 }

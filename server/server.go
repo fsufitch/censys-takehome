@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net"
 	"time"
 
 	"github.com/fsufitch/censys-takehome/database"
@@ -10,13 +11,13 @@ import (
 )
 
 type Server struct {
-	Context  context.Context
-	Log      logging.LogFunc
-	Database *database.DatabaseConnector
+	Context      context.Context
+	Log          logging.LogFunc
+	ScanEntryDAO *database.ScanEntryDAO
 }
 
 func (srv Server) Run() error {
-	srv.Log().Info().Msg("hello world")
+	srv.Log().Info().Msg("server starting")
 
 	go srv.doStuff()
 
@@ -36,20 +37,21 @@ func (srv Server) doStuff() {
 			return
 		default:
 		}
-		srv.Log().Info().Msg("trying to get db")
-		db, err := srv.Database.DB()
-		if err != nil {
-			srv.Log().Err(err).Msg("failed to get db :(")
-			continue
+
+		entry := database.ScanEntry{
+			IP:      net.IPv4(127, 0, 0, 1),
+			Port:    8080,
+			Service: "",
+			Updated: time.Now(),
+			Data:    []byte("hello"),
 		}
 
-		err = db.PingContext(srv.Context)
-		if err != nil {
-			srv.Log().Err(err).Msg("ping failed :(")
-			continue
-		}
+		srv.Log().Info().Any("entry", entry).Msg("upsert entry")
 
-		srv.Log().Info().Msg("yay database")
+		err := srv.ScanEntryDAO.AddEntry(entry)
+		if err != nil {
+			srv.Log().Err(err).Msg("upsert failed")
+		}
 	}
 }
 

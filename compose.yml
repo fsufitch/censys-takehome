@@ -52,18 +52,46 @@ services:
     volumes:
       - scandb:/var/lib/postgresql/data:rw
 
-  # The processor (the actual takehome exercise)
-  processor:
+
+  # Schema initialization (to run before the processor)
+  schema-init:
     build:
       context: .
       dockerfile: Containerfile
       target: processor
+    depends_on:
+      scandb:
+        condition: service_started
     environment:
       POSTGRES_HOST: scandb
       POSTGRES_PORT: 5432
       POSTGRES_DB: scandb
       POSTGRES_USER: scan-ingest
       POSTGRES_PASSWORD: scanner-pw-development-only
+    command: ["-D", "--pretty", "schema"]
+
+
+  # The processor 
+  processor:
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: processor
+    depends_on:
+      scandb:
+        condition: service_started
+      mk-topic:
+        condition: service_completed_successfully
+      schema-init:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_HOST: scandb
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: scandb
+      POSTGRES_USER: scan-ingest
+      POSTGRES_PASSWORD: scanner-pw-development-only
+    
+    command: ["-D", "--pretty", "server"]
 
 
 volumes:

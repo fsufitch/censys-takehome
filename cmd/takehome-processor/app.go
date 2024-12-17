@@ -75,14 +75,14 @@ func NewCLI() *cli.App {
 			},
 			{
 				Name:   "schema",
-				Action: ServerMain,
+				Action: SchemaInitMain,
 			},
 		},
 	}
 }
 
 func ServerMain(cctx *cli.Context) error {
-	app, cleanup, err := initializeApp(
+	server, cleanup, err := initializeServer(
 		cctx.Context,
 		config.PostgresConfiguration{
 			Host:     cctx.String("pghost"),
@@ -99,13 +99,42 @@ func ServerMain(cctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = app.Run()
+	err = server.Run()
 	cleanup()
 	return err
 }
 
-var AppProviders = wire.NewSet(
+var ServerProvider = wire.NewSet(
 	server.ProvideServer,
-	database.ProvideDatabase,
+	logging.ProvideLogFunc,
+	database.ProvideScanEntryDAO,
+)
+
+func SchemaInitMain(cctx *cli.Context) error {
+	dao, cleanup, err := initializeSchemaDAO(
+		cctx.Context,
+		config.PostgresConfiguration{
+			Host:     cctx.String("pghost"),
+			Port:     cctx.Int("pgport"),
+			User:     cctx.String("pguser"),
+			Password: cctx.String("pgpass"),
+			Database: cctx.String("pgdb"),
+		},
+		config.LoggingConfiguration{
+			Debug:  cctx.Bool("debug"),
+			Pretty: cctx.Bool("pretty"),
+		},
+	)
+	if err != nil {
+		return err
+	}
+	err = dao.InitializeSchema()
+	cleanup()
+	return err
+
+}
+
+var SchemaInitProvider = wire.NewSet(
+	database.ProvideSchemaDAO,
 	logging.ProvideLogFunc,
 )

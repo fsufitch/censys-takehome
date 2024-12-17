@@ -5,9 +5,12 @@ go 1.22
 require (
 	cloud.google.com/go/pubsub v1.45.3
 	github.com/urfave/cli/v2 v2.27.5
-)
+	github.com/google/uuid v1.6.0 
+	github.com/google/wire v0.6.0
+	github.com/lib/pq v1.10.9
+	github.com/rs/zerolog v1.33.0
 
-require github.com/lib/pq v1.10.9 // indirect
+)
 
 require (
 	cloud.google.com/go v0.116.0 // indirect
@@ -21,13 +24,10 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/google/wire v0.6.0
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/rs/zerolog v1.33.0
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	go.opencensus.io v0.24.0 // indirect

@@ -3,10 +3,21 @@
 FROM golang:1.22 AS builder
 
 WORKDIR /src
+
+# Tool necessary for builds down the line
+RUN go install github.com/google/wire/cmd/wire@latest
+
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 ./build.sh
+
+COPY cmd cmd
+COPY config config
+COPY database database
+COPY logging logging
+COPY scanning scanning
+COPY server server
+COPY build.sh ./
+RUN ./build.sh
 
 
 ##### scanner -- the runnable "scanner" binary, as provided in the original repo
@@ -19,4 +30,4 @@ CMD ["/app/scanner"]
 FROM alpine AS processor
 WORKDIR /app
 COPY --from=builder /src/bin/takehome-processor .
-CMD ["/app/takehome-processor", "-D", "--pretty", "server"]
+ENTRYPOINT [ "/app/takehome-processor" ]
