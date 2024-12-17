@@ -100,6 +100,14 @@ docker-compose up -d --scale processor=4 processor
 
 This will replace the single processor container with four that have identical configuration. Checking the logs and the output database in the same manner validates that they are working properly.
 
+### Clearing the Environment
+
+The Postgres database uses a volume to store its data. Thus, to fully reset the Docker Compose environment, you should use:
+
+```bash
+docker-compose down -v
+```
+
 ## Unit Testing (TODO)
 
 I wanted to add unit tests (using `go test`) to all the code, but that would extend the time this mini-project would take a bit too much. However, I do have a plan for how to do them.
