@@ -24,10 +24,10 @@ RUN ./build.sh
 FROM alpine AS scanner
 WORKDIR /app
 COPY --from=builder /src/bin/scanner .
-CMD ["/app/scanner"]
+CMD ["/app/censys-takehome-scanner"]
 
 ##### processor -- the runnable "takehome-processor" binary
 FROM alpine AS processor
 WORKDIR /app
 COPY --from=builder /src/bin/takehome-processor .
-ENTRYPOINT [ "/app/takehome-processor" ]
+ENTRYPOINT [ "/app/censys-takehome-processor" ]
