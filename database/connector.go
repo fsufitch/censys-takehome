@@ -25,7 +25,7 @@ type DatabaseConnector struct {
 
 	Finalized chan error // Channel is closed once connector work is finalized
 
-	connectTrigger    chan struct{} // Close this chan to cause a new connection
+	connectionTrigger chan struct{} // Send on this channel to cause a connection
 	newConnections    chan *sql.DB  // New connections are delivered here; if "nil" is delivered, then no connection is currently available
 	currentConections chan *sql.DB  // Used for serving connections to users of the connector
 }
@@ -38,7 +38,7 @@ func ProvideConnector(ctx context.Context, config config.PostgresConfiguration, 
 
 		Finalized: make(chan error),
 
-		connectTrigger:    make(chan struct{}), // close this chan whenever
+		connectionTrigger: make(chan struct{}),
 		newConnections:    make(chan *sql.DB),
 		currentConections: make(chan *sql.DB),
 	}
@@ -87,7 +87,9 @@ func (dbc *DatabaseConnector) DB() (*sql.DB, error) {
 			}
 			return db, nil
 		case <-time.After(1 * time.Second):
-			dbc.Reconnect()
+			if err := dbc.Reconnect(); err != nil {
+				return nil, fmt.Errorf("reconnect failed: %w", err)
+			}
 			select {
 			case <-dbc.Context.Done():
 				return nil, fmt.Errorf("%w: connections unavailable (connector quit)", ErrConnection)
@@ -104,15 +106,12 @@ func (dbc *DatabaseConnector) DB() (*sql.DB, error) {
 	}
 }
 
-func (dbc *DatabaseConnector) Reconnect() {
+func (dbc *DatabaseConnector) Reconnect() error {
 	select {
-	case <-dbc.connectTrigger:
-		// If the trigger is already closed, no need to do anything
-		dbc.Log().Debug().Msg("reconnect already in progress")
+	case dbc.connectionTrigger <- struct{}{}:
+		return nil
 	default:
-		// Otherwise, close it
-		dbc.Log().Info().Msg("requesting reconnect")
-		close(dbc.connectTrigger)
+		return fmt.Errorf("%w: failed to send connection trigger; is the worker dead?", ErrConnection)
 	}
 }
 
@@ -120,17 +119,52 @@ func (dbc *DatabaseConnector) Reconnect() {
 func (dbc *DatabaseConnector) newConnectionWorker() {
 	workerLog := dbc.Log().With().Str("worker", "newConnection").Logger()
 	workerLog.Debug().Msg("worker starting")
+
+	// Loop for ignoring triggers while connection work is in progress
+	dedupedTrigger := make(chan struct{}, 32)
+	stopDedupe := make(chan struct{})
+	defer close(dedupedTrigger)
+	defer close(stopDedupe)
+	go func() {
+		for range dbc.connectionTrigger {
+			dedupedTrigger <- struct{}{}
+		stopDedupeLoop:
+			for {
+				select {
+				case <-stopDedupe:
+					break stopDedupeLoop
+				case <-dbc.connectionTrigger:
+					dbc.Log().Debug().Msg("connection already in progress")
+				}
+			}
+		}
+	}()
+
 worker:
 	// Overall worker loop
 	for {
+		// Wait until a connect is triggered, or the context is canceled
 		select {
 		case <-dbc.Context.Done():
 			break worker
-		case <-dbc.connectTrigger:
-			// Exit this select if a new connection is triggered
+		case <-dedupedTrigger:
 		}
 
 		workerLog.Info().Msg("new connection triggered")
+
+		// Drain any connection triggers while we're actually connecting
+		stopDrainingTriggers := make(chan struct{})
+		defer close(stopDrainingTriggers)
+		go func() {
+			for {
+				select {
+				case <-stopDrainingTriggers:
+					return
+				case <-dbc.connectionTrigger:
+					workerLog.Debug().Msg("connection already in progress")
+				}
+			}
+		}()
 
 		var db *sql.DB
 		var err error
@@ -194,8 +228,10 @@ worker:
 
 		workerLog.Debug().Msg("sending new connection")
 		dbc.newConnections <- db
-		dbc.connectTrigger = make(chan struct{})
+
+		stopDedupe <- struct{}{}
 	}
+
 	workerLog.Warn().Msg("worker terminating")
 }
 
@@ -220,8 +256,6 @@ worker:
 				}
 			}
 		}
-
-		workerLog.Debug().Msg("have non-nil connection")
 
 		select {
 		case <-dbc.Context.Done():

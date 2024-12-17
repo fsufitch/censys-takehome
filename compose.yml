@@ -80,7 +80,7 @@ services:
     depends_on:
       scandb:
         condition: service_started
-      mk-topic:
+      mk-subscription:
         condition: service_completed_successfully
       schema-init:
         condition: service_completed_successfully
@@ -93,6 +93,7 @@ services:
       POSTGRES_DB: scandb
       POSTGRES_USER: scan-ingest
       POSTGRES_PASSWORD: scanner-pw-development-only
+      DEBUG: 1
     
     command: ["server"]
 
