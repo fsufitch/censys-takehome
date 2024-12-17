@@ -12,7 +12,6 @@ import (
 	"github.com/fsufitch/censys-takehome/config"
 	"github.com/fsufitch/censys-takehome/database"
 	"github.com/fsufitch/censys-takehome/logging"
-	"github.com/google/uuid"
 	"github.com/google/wire"
 )
 
@@ -23,52 +22,32 @@ type Processor struct {
 	Config       config.PubsubConfiguration
 	Log          logging.LogFunc
 	ScanEntryDAO *database.ScanEntryDAO
-
-	subscriptionID string
 }
 
 func (proc *Processor) Run() error {
-	if proc.subscriptionID != "" {
-		return fmt.Errorf("%w: processor already has an active subscription (%s)", ErrProcessor, proc.subscriptionID)
-	}
+	proc.Log().Info().Msg("processor starting")
 
-	newUUID, err := uuid.NewRandom()
-	if err != nil {
-		return fmt.Errorf("%w: failed creating subscription ID: %w", ErrProcessor, err)
-	}
-	proc.subscriptionID = newUUID.String()
-	L := proc.Log().With().Str("sub", proc.subscriptionID).Logger()
-
-	L.Info().Msg("processor starting")
-
-	L.Debug().Str("project", proc.Config.ProjectID).Msg("connecting to pubsub")
+	proc.Log().Debug().Str("project", proc.Config.ProjectID).Msg("connecting to pubsub")
 	client, err := pubsub.NewClient(proc.Context, proc.Config.ProjectID)
 	if err != nil {
 		return fmt.Errorf("%w: failed connecting to pubsub (%s): %w", ErrProcessor, proc.Config.ProjectID, err)
 	}
 
-	L.Debug().Str("topic", proc.Config.TopicID).Msg("checking topic existence")
-	topic := client.Topic(proc.Config.TopicID)
-	if exists, err := topic.Exists(proc.Context); !exists || err != nil {
-		return fmt.Errorf("%w: topic does not exist (%s): %w", ErrProcessor, proc.Config.TopicID, err)
-	}
-
-	L.Debug().Msg("creating subscription")
-	subscription, err := client.CreateSubscription(proc.Context, proc.subscriptionID, pubsub.SubscriptionConfig{
-		Topic: topic,
-	})
-	if err != nil {
-		return fmt.Errorf("%w: error creating subscription: %w", ErrProcessor, err)
+	proc.Log().Debug().Msg("getting subscription")
+	subscription := client.Subscription(proc.Config.SubscriptionID)
+	if exists, err := subscription.Exists(proc.Context); !exists || err != nil {
+		return fmt.Errorf("%w: subscription does not exist (%s): %w", ErrProcessor, proc.Config.SubscriptionID, err)
 	}
 
 	subscription.Receive(proc.Context, proc.receive)
 
-	proc.Log().Info().Msg("processor shutting down")
+	proc.Log().Warn().Msg("processor shutting down")
+
 	return nil
 }
 
 func (proc *Processor) receive(msgContext context.Context, msg *pubsub.Message) {
-	L := proc.Log().With().Str("sub", proc.subscriptionID).Logger()
+	L := proc.Log().With().Str("msgID", msg.ID).Logger()
 	L.Info().Msg("received message")
 
 	scan := Scan{}
@@ -99,13 +78,12 @@ func (proc *Processor) receive(msgContext context.Context, msg *pubsub.Message) 
 	err = proc.ScanEntryDAO.AddEntry(entry)
 	if err != nil {
 		L.Err(err).Msg("error upserting entry")
-		msg.Ack()
+		msg.Nack() // Do *not* acknowledge it; it is a valid entry and should be retried
 		return
 	}
 
 	L.Info().Msg("successfully recorded entry")
 	msg.Ack()
-	return
 }
 
 var ProvideProcessor = wire.Struct(new(Processor), "Context", "Config", "Log", "ScanEntryDAO")

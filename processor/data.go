@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var ErrData = errors.New("data error:")
+var ErrData = errors.New("data error")
 
 type DataVersion int
 

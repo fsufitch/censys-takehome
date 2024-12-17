@@ -109,12 +109,11 @@ func (dbc *DatabaseConnector) Reconnect() {
 	case <-dbc.connectTrigger:
 		// If the trigger is already closed, no need to do anything
 		dbc.Log().Debug().Msg("reconnect already in progress")
-		return
 	default:
+		// Otherwise, close it
+		dbc.Log().Info().Msg("requesting reconnect")
+		close(dbc.connectTrigger)
 	}
-	// Otherwise, close it
-	dbc.Log().Info().Msg("requesting reconnect")
-	close(dbc.connectTrigger)
 }
 
 // newConnectionWorker is a worker function which creates a new worker whenever connectTrigger is closed

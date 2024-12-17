@@ -14,6 +14,6 @@ type PostgresConfiguration struct {
 }
 
 type PubsubConfiguration struct {
-	ProjectID string
-	TopicID   string
+	ProjectID      string
+	SubscriptionID string
 }

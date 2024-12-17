@@ -68,7 +68,7 @@ services:
       POSTGRES_DB: scandb
       POSTGRES_USER: scan-ingest
       POSTGRES_PASSWORD: scanner-pw-development-only
-    command: ["-D", "--pretty", "schema"]
+    command: ["schema"]
 
 
   # The processor 
@@ -87,14 +87,14 @@ services:
     environment:
       PUBSUB_EMULATOR_HOST: pubsub:8085
       PUBSUB_PROJECT_ID: test-project
-      PUBSUB_TOPIC_ID: scan-topic
+      PUBSUB_SUBSCRIPTION_ID: scan-sub
       POSTGRES_HOST: scandb
       POSTGRES_PORT: 5432
       POSTGRES_DB: scandb
       POSTGRES_USER: scan-ingest
       POSTGRES_PASSWORD: scanner-pw-development-only
     
-    command: ["-D", "--pretty", "server"]
+    command: ["server"]
 
 
 volumes:

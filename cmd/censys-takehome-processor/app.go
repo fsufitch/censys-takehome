@@ -55,28 +55,30 @@ func NewCLI() *cli.App {
 			},
 
 			&cli.StringFlag{
-				Name:    "pubsub-project",
+				Name:    "project",
 				Aliases: []string{"P"},
 				EnvVars: []string{"PUBSUB_PROJECT_ID"},
 				Value:   "test-project",
 				Usage:   "what Pubsub project to receive data from",
 			},
 			&cli.StringFlag{
-				Name:    "pubsub-topic",
-				Aliases: []string{"T"},
-				EnvVars: []string{"PUBSUB_TOPIC_ID"},
-				Value:   "scan-topic",
+				Name:    "subscription",
+				Aliases: []string{"S"},
+				EnvVars: []string{"PUBSUB_SUBSCRIPTION_ID"},
+				Value:   "scan-sub",
 				Usage:   "what Pubsub topic to receive data from",
 			},
 
 			&cli.BoolFlag{
 				Name:    "debug",
 				Aliases: []string{"D"},
+				EnvVars: []string{"DEBUG"},
 				Usage:   "enable more thorough debugging",
 			},
 			&cli.BoolFlag{
-				Name:  "pretty",
-				Usage: "enable pretty logging",
+				Name:    "pretty",
+				EnvVars: []string{"PRETTY_LOGS"},
+				Usage:   "enable pretty logging",
 			},
 		},
 		Commands: []*cli.Command{
@@ -107,8 +109,8 @@ func ServerMain(cctx *cli.Context) error {
 			Pretty: cctx.Bool("pretty"),
 		},
 		config.PubsubConfiguration{
-			ProjectID: cctx.String("pubsub-project"),
-			TopicID:   cctx.String("pubsub-topic"),
+			ProjectID:      cctx.String("project"),
+			SubscriptionID: cctx.String("subscription"),
 		},
 	)
 	if err != nil {
