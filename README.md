@@ -90,6 +90,23 @@ Additionally, I also queried the Postgres database directly to inspect and verif
 docker-compose exec scandb psql -U scan-ingest scandb
 ```
 
+```text
+scandb=# select * from scan_entries limit 10;
+    ip     | port  | service |     updated_on      |         data         
+-----------+-------+---------+---------------------+----------------------
+ 1.1.1.21  | 10698 | SSH     | 2024-12-17 03:55:58 | service response: 34
+ 1.1.1.25  | 40074 | SSH     | 2024-12-17 03:55:59 | service response: 61
+ 1.1.1.90  | 45507 | SSH     | 2024-12-17 03:56:00 | service response: 61
+ 1.1.1.69  |  9393 | DNS     | 2024-12-17 03:56:01 | service response: 34
+ 1.1.1.238 | 56241 | DNS     | 2024-12-17 03:56:02 | service response: 15
+ 1.1.1.117 | 23905 | HTTP    | 2024-12-17 03:56:03 | service response: 58
+ 1.1.1.33  | 54074 | SSH     | 2024-12-17 03:56:04 | service response: 51
+ 1.1.1.208 | 52545 | SSH     | 2024-12-17 03:56:05 | service response: 28
+ 1.1.1.23  | 57313 | HTTP    | 2024-12-17 03:56:06 | service response: 50
+ 1.1.1.121 |  3864 | DNS     | 2024-12-17 03:56:07 | service response: 68
+(10 rows)
+```
+
 ### Concurrency/Parallelization
 
 Horizontal scalability is baked in to the project. Multiple instances of the processor can function in tandem seamlessly. To observe this, take the working stack (see above) and run this:
