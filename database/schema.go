@@ -22,7 +22,7 @@ const createSchemaSQL = `
 		port integer NOT NULL,
 		service varchar NOT NULL,
 		updated_on timestamp without time zone NOT NULL,
-		data bytea,
+		data text,
 		PRIMARY KEY (ip, port, service)
 	)
 `

@@ -58,7 +58,7 @@ func (proc *Processor) receive(msgContext context.Context, msg *pubsub.Message) 
 		return
 	}
 
-	scanData, err := scan.DataBytes()
+	scanData, err := scan.DataString()
 	if err != nil {
 		L.Err(err).Bytes("data", msg.Data).Msg("failed to extract entry data")
 		msg.Ack() // Ack so it doesn't get delivered again

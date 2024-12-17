@@ -3,6 +3,7 @@ package processor
 import (
 	"errors"
 	"fmt"
+	"unicode/utf8"
 )
 
 var ErrData = errors.New("data error")
@@ -35,13 +36,16 @@ type V2Data struct {
 	ResponseStr string `json:"response_str"`
 }
 
-func (sc Scan) DataBytes() ([]byte, error) {
+func (sc Scan) DataString() (string, error) {
 	switch sc.DataVersion {
 	case DataVersion_1:
-		return sc.Data.ResponseBytesUtf8, nil
+		if !utf8.Valid(sc.Data.ResponseBytesUtf8) {
+			return "", fmt.Errorf("%w: received invalid UTF-8 data", ErrData)
+		}
+		return string(sc.Data.ResponseBytesUtf8), nil
 	case DataVersion_2:
-		return []byte(sc.Data.V2Data.ResponseStr), nil
+		return sc.Data.V2Data.ResponseStr, nil
 	default:
-		return nil, fmt.Errorf("%w: unknown data version number (%d)", ErrData, sc.DataVersion)
+		return "", fmt.Errorf("%w: unknown data version number (%d)", ErrData, sc.DataVersion)
 	}
 }

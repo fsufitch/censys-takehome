@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/wire"
-	"github.com/lib/pq"
 	"github.com/rs/zerolog"
 )
 
@@ -23,7 +22,7 @@ type ScanEntry struct {
 	Port    uint32
 	Service string
 	Updated time.Time
-	Data    []byte
+	Data    string
 }
 
 const upsertEntryQuery = `
@@ -40,7 +39,7 @@ func (dao ScanEntryDAO) AddEntry(e ScanEntry) error {
 
 		L.Debug().Msg("running query")
 		_, err := tx.ExecContext(dao.Context, upsertEntryQuery,
-			e.IP.String(), e.Port, e.Service, e.Updated, pq.ByteaArray{e.Data},
+			e.IP.String(), e.Port, e.Service, e.Updated, e.Data,
 		)
 
 		if err != nil {
